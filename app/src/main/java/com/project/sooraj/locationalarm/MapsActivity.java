@@ -65,6 +65,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
         com.google.android.gms.location.LocationListener{
+    Marker mMarker;
     private boolean currentlyTracking;
 
     public GoogleMap mMap;
@@ -157,15 +158,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
             @Override
             public void onMapClick(LatLng latLng) {
+                if (mMarker!=null) {
+                    //if marker exists (not null or whatever)
+                    if(latLng!=null){
+                    mMarker.setPosition(latLng);}
+                }else {
+                    editor.putString("lat", String.valueOf(latLng.latitude));
+                    editor.putString("long", String.valueOf(latLng.longitude));
+                    editor.apply();
+                    editor.commit();
 
-                editor.putString("lat", String.valueOf(latLng.latitude));
-                editor.putString("long", String.valueOf(latLng.longitude));
-                editor.apply();
-                editor.commit();
-
-                mMap.addMarker(new MarkerOptions().position(latLng).title("Destination Marker"));
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-
+                    mMarker= mMap.addMarker(new MarkerOptions().position(latLng).title("Destination Marker"));
+                    mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+                }
             }
         });
 
@@ -318,7 +323,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         end.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-               mMap.clear();
+                 mMap.clear();
+                 mMarker=null;
+
+
                 cancelAlarmManager();
 
             }
@@ -399,7 +407,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         //stop location updates
         if (mGoogleApiClient != null) {
-            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+           // LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
             Log.d("onLocationChanged", "Removing Location Updates");
         }
         Log.d("onLocationChanged", "Exit");
@@ -499,33 +507,5 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         alarmManager.cancel(pendingIntent);
     }
 
-    public void showNotification(){
 
-        // define sound URI, the sound to be played when there's a notification
-        Uri soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-
-        // intent triggered, you can add other intent for other actions
-        Intent intent = new Intent(this, MainActivity.class);
-        PendingIntent pIntent = PendingIntent.getActivity(this, 0, intent, 0);
-
-        // this is it, we'll build the notification!
-        // in the addAction method, if you don't want any icon, just set the first param to 0
-        @SuppressLint({"NewApi", "LocalSuppress"}) Notification mNotification = new Notification.Builder(this)
-
-                .setContentTitle("Notification !")
-                .setContentText("Your destination have reached!")
-                .setSmallIcon(R.mipmap.ic_launcher)
-                .setContentIntent(pIntent)
-                .setSound(soundUri).addAction(R.mipmap.ic_launcher, "View", pIntent)
-                .addAction(0, "Remind", pIntent)
-
-                .build();
-
-        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-
-        // If you want to hide the notification after it was selected, do the code below
-        // myNotification.flags |= Notification.FLAG_AUTO_CANCEL;
-
-        notificationManager.notify(0, mNotification);
-    }
 }
